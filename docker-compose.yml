@@ -16,3 +16,4 @@ services:
       - /dev/dri:/dev/dri
     command: bash -c "source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main && source /usr/share/gazebo/setup.sh && ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config ${LAUNCH_MODE}.launch.py && gzserver --verbose -s --disable-audio"
     network_mode: "host"
+    
