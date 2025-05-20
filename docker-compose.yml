@@ -1,0 +1,18 @@
+version: '3'
+services:
+  ros2_fairino:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ros2_fairino
+    environment:
+      - DISPLAY=${DISPLAY}  
+      - DEBIAN_FRONTEND=noninteractive
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+#      - ros2_ws_data:/root/ros2_ws
+    devices:
+      - /dev/dri:/dev/dri
+    command: bash -c "source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main && source /usr/share/gazebo/setup.sh && ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config ${LAUNCH_MODE}.launch.py && gzserver --verbose -s --disable-audio"
+    network_mode: "host"
