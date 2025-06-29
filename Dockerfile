@@ -1,6 +1,8 @@
 # Dockerfile для ROS 2 и плагина frcobot_ros2_main с зависимостями MoveIt
 FROM osrf/ros:humble-desktop-full
 
+#RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F42ED6FBAB17C654
+
 # Обновляем пакеты и устанавливаем необходимые зависимости
 RUN apt-get update && apt-get install -y \
     nano git apt-utils gnupg\

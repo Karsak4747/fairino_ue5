@@ -3,5 +3,5 @@
 
 Запускается командой
 ```shell
-docker-compose up --build
+docker-compose up -d
 ```

@@ -1,4 +1,3 @@
-version: '3'
 services:
   ros2_fairino:
     build:
@@ -6,9 +5,11 @@ services:
       dockerfile: Dockerfile
     container_name: ros2_fairino
     environment:
-      - DISPLAY=${DISPLAY}  
+#      - DISPLAY=${DISPLAY} 
+      - DISPLAY=:0
       - DEBIAN_FRONTEND=noninteractive
       - QT_X11_NO_MITSHM=1
+      - ENV NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
 #      - ros2_ws_data:/root/ros2_ws
