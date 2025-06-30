@@ -12,6 +12,7 @@ services:
       - ENV NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev/shm:/dev/shm
 #      - ros2_ws_data:/root/ros2_ws
     devices:
       - /dev/dri:/dev/dri

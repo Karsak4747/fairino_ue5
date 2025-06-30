@@ -1,11 +1,8 @@
-# Dockerfile для ROS 2 и плагина frcobot_ros2_main с зависимостями MoveIt
 FROM osrf/ros:humble-desktop-full
 
-#RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F42ED6FBAB17C654
-
-# Обновляем пакеты и устанавливаем необходимые зависимости
+# Установка зависимостей
 RUN apt-get update && apt-get install -y \
-    nano git apt-utils gnupg\
+    nano git apt-utils gnupg \
     build-essential \
     ros-humble-gazebo-ros \
     ros-humble-gazebo-ros-pkgs \
@@ -14,10 +11,7 @@ RUN apt-get update && apt-get install -y \
     ros-humble-moveit \
     ros-humble-moveit-common \
     ros-humble-moveit-ros-planning \
- #   ros-humble-ament-cmake-gmock \
-    ros-humble-moveit-ros-move-group
-
-RUN apt-get update && apt-get install -y \
+    ros-humble-moveit-ros-move-group \
     libxcb-xinerama0 \
     libxkbcommon-x11-0 \
     libxcb-icccm4 \
@@ -27,30 +21,31 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     x11-apps
 
-# Копирование и устанавливка плагина frcobot_ros2_main
+# Копируем основной пакет
 COPY frcobot_ros2_main /root/ros2_ws/src/frcobot_ros2_main
 
+# Клонируем warehouse_ros_mongo с исправлением
 WORKDIR /root/ros2_ws/src
-RUN git clone -b ros2 https://github.com/ros-planning/warehouse_ros_mongo.git
+RUN git clone -b ros2 https://github.com/ros-planning/warehouse_ros_mongo.git && \
+    # Применяем исправление для проблемы символических ссылок
+    sed -i 's|ament_cmake_python_symlink_warehouse_ros_mongo|# &|' warehouse_ros_mongo/CMakeLists.txt
 
+# Копируем UE connector
+COPY ros2_ue_connector_node /root/ros2_ws/src/ros2_ue_connector_node
 
-# Устанавливаем зависимости, если они указаны в package.xml
+# Установка зависимостей ОС
 WORKDIR /root/ros2_ws
-RUN apt-get update && rosdep install --from-paths src --ignore-src --skip-keys=warehouse_ros_mongo -r -y && pip install pyyaml
+RUN apt-get update && \
+    rosdep install --from-paths src --ignore-src -r -y && \
+    pip install pyyaml
 
+# Сборка ВСЕХ пакетов за один шаг
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+    colcon build --symlink-install --parallel-workers 4"
 
-# Сборка ROS2 пакетов и плагинов
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --parallel-workers 4"
+# Настройка окружения
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
+    echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc && \
+    echo "export GAZEBO_MODEL_PATH=\$GAZEBO_MODEL_PATH:/root/ros2_ws/src/frcobot_ros2_main" >> ~/.bashrc
 
-# Настройка среды
-RUN echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc
-
-#RUN /bin/bash -c "source /usr/share/gazebo/setup.sh && cmake /root/ros2_ws/src/frcobot_ros2_main/iiwa_description/CMakeLists.txt"
-
-
-RUN /bin/bash -c "source /usr/share/gazebo/setup.sh && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main"
-
-# Копирование файлов для конкурса
-# COPY trajectories /root/trajectories
-# Запуск контейнера в интерактивном режиме с шеллом
 CMD ["/bin/bash"]
