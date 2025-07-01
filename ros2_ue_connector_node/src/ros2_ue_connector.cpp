@@ -9,6 +9,8 @@ int main(int argc, char** argv){
     uint8_t* data;
     key_t key = ftok("/dev/shm/data.conf", 1);
     int shmid = shmget(key, 256, 0666|IPC_CREAT);
+    RCLCPP_INFO(node->get_logger(), "Container SHM key = %d, id = %d", key, shmid);
+
     if(shmid == -1){
         RCLCPP_ERROR(node->get_logger(), "ERROR CREATING SHARED MEMORY SEGMENT");
     }else{
