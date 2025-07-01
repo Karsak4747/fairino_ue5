@@ -20,7 +20,8 @@ void UROS2UEConnector::BeginPlay()
 	Super::BeginPlay();
 
 	key = ftok("/dev/shm/data.conf", 1);
-	shmid = shmget(key, 256, 0666|IPC_CREAT);
+	shmid = shmget(key, sizeof(JointCommandMsg), 0666|IPC_CREAT);
+	UE_LOG(LogTemp, Log, TEXT("Host SHM key = %d, id = %d"), key, shmid);
 	if(shmid == -1){
 		UE_LOG(LogTemp, Warning, TEXT("ERROR CREATING SHARED MEMORY SEGMENT"));
 	}else{
@@ -32,6 +33,22 @@ void UROS2UEConnector::BeginPlay()
 	}
 	// ...
 	
+}
+
+
+
+
+
+
+void UROS2UEConnector::WriteJointCommand(int joint, float value){
+	static u_long msg_id = 0;
+	if(shmid != -1 && data != (void*)-1){
+		int* q = (int*)data;
+		*q = msg_id;
+		q++;
+		float*v = (float*)q + joint;
+		*v = value;
+	}
 }
 
 
@@ -49,18 +66,18 @@ void UROS2UEConnector::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	static int msg_id = 0;
-	std::string msg = "Hello world";
-	const char* str_arr = msg.c_str();
+	// static int msg_id = 0;
+	// std::string msg = "Hello world";
+	// const char* str_arr = msg.c_str();
 
-	int* q = (int*)data;
-	*q = msg_id;
-	q++;
-	msq_id++;
-	char* s = (char*)q;
-	for(int i = 0; i < msg.length() + 1; i++){
-		*s = str_arr[i];
-		s++;
-	}
+	// int* q = (int*)data;
+	// *q = msg_id;
+	// q++;
+	// msg_id++;
+	// char* s = (char*)q;
+	// for(int i = 0; i < msg.length() + 1; i++){
+	// 	*s = str_arr[i];
+	// 	s++;
+	// }
 }
 

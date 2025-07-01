@@ -17,6 +17,8 @@ class RCSIMULATION_API UROS2UEConnector : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UROS2UEConnector();
+	UFUNCTION(BlueprintCallable)
+	void WriteJointCommand(int joint, float value);
 
 protected:
 	// Called when the game starts
@@ -32,4 +34,8 @@ private:
 	key_t key;
 	int shmid;
 	uint8_t* data;	
+	struct JointCommands{
+		unsigned long msg_id;
+		float joint_command[6];
+	}JointCommandMsg;
 };
