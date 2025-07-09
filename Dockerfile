@@ -1,25 +1,31 @@
 FROM osrf/ros:humble-desktop-full
 
-# Установка зависимостей
+# 1) Удаляем старый список и ключ
+RUN rm -f /etc/apt/sources.list.d/ros2-latest.list \
+          /usr/share/keyrings/ros2-latest-archive-keyring.gpg
+
+# 2) Ставим утилиты и импортируем новый ключ
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg lsb-release \
+ && mkdir -p /etc/apt/keyrings \
+ && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+      | gpg --dearmor \
+      | tee /etc/apt/keyrings/ros-archive-keyring.gpg > /dev/null
+
+# 3) Добавляем единственный чистый репозиторий
+RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/ros-archive-keyring.gpg] \
+      http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" \
+      > /etc/apt/sources.list.d/ros2.list
+
+# Теперь можно обновлять и устанавливать нужные пакеты
 RUN apt-get update && apt-get install -y \
-    nano git apt-utils gnupg \
-    build-essential \
-    ros-humble-gazebo-ros \
-    ros-humble-gazebo-ros-pkgs \
-    python3-colcon-common-extensions \
-    python3-pip \
-    ros-humble-moveit \
-    ros-humble-moveit-common \
-    ros-humble-moveit-ros-planning \
-    ros-humble-moveit-ros-move-group \
-    libxcb-xinerama0 \
-    libxkbcommon-x11-0 \
-    libxcb-icccm4 \
-    libxcb-image0 \
-    libxcb-keysyms1 \
-    libxcb-render-util0 \
-    libxrender1 \
-    x11-apps
+    nano git apt-utils build-essential \
+    ros-humble-gazebo-ros ros-humble-gazebo-ros-pkgs \
+    python3-colcon-common-extensions python3-pip \
+    ros-humble-moveit ros-humble-moveit-common \
+    ros-humble-moveit-ros-planning ros-humble-moveit-ros-move-group \
+    libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
+    libxcb-keysyms1 libxcb-render-util0 libxrender1 x11-apps
 
 # Копируем основной пакет
 COPY frcobot_ros2_main /root/ros2_ws/src/frcobot_ros2_main

@@ -5,19 +5,37 @@ services:
       dockerfile: Dockerfile
     container_name: ros2_fairino
     environment:
-#      - DISPLAY=${DISPLAY} 
-      - DISPLAY=:0
+      - DISPLAY=${DISPLAY} # Для вывода изображения через сокет unix X11
       - DEBIAN_FRONTEND=noninteractive
-      - QT_X11_NO_MITSHM=1
-      - ENV NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - /dev/shm:/dev/shm
-#      - ros2_ws_data:/root/ros2_ws
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw # Для вывода изображения через сокет unix X11
+      - /dev/shm:/dev/shm # Для связи с UE5
     devices:
       - /dev/dri:/dev/dri
     command: bash -c "source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main && source /usr/share/gazebo/setup.sh && ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config ${LAUNCH_MODE}.launch.py && gzserver --verbose -s --disable-audio"
-    network_mode: "host"
+    networks:
+      fairino-net:
+        ipv4_address: 192.168.58.10
+    privileged: true
     ipc: host
     shm_size: '512mb'
     
+
+  fairino-container:
+    image: fairino_simmachine
+    container_name: fairino-container
+    privileged: true
+    user: root
+    networks:
+      fairino-net:
+        ipv4_address: 192.168.58.2
+    restart: unless-stopped
+
+networks:
+  fairino-net:
+    driver: bridge
+    name: "fairino-net"
+#    external: true
+    ipam:
+      config:
+        - subnet: 192.168.58.0/24

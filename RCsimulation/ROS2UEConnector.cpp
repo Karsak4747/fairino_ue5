@@ -48,6 +48,7 @@ void UROS2UEConnector::WriteJointCommand(int joint, float value){
 		q++;
 		float*v = (float*)q + joint;
 		*v = value;
+		msg_id++;
 	}
 }
 
