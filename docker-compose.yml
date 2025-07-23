@@ -12,7 +12,7 @@ services:
       - /dev/shm:/dev/shm # Для связи с UE5
     devices:
       - /dev/dri:/dev/dri
-    command: bash -c "source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main && source /usr/share/gazebo/setup.sh && ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config ${LAUNCH_MODE}.launch.py && gzserver --verbose -s --disable-audio"
+    command: bash -c "source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main && source /usr/share/gazebo/setup.sh && xeyes" #ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config ${LAUNCH_MODE}.launch.py && gzserver --verbose -s --disable-audio"
     networks:
       fairino-net:
         ipv4_address: 192.168.58.10
@@ -35,7 +35,7 @@ networks:
   fairino-net:
     driver: bridge
     name: "fairino-net"
-#    external: true
+    external: true
     ipam:
       config:
         - subnet: 192.168.58.0/24

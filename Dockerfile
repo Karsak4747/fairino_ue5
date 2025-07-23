@@ -20,10 +20,13 @@ RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/ros-archive-keyring.gpg] \
 # Теперь можно обновлять и устанавливать нужные пакеты
 RUN apt-get update && apt-get install -y \
     nano git apt-utils build-essential \
-    ros-humble-gazebo-ros ros-humble-gazebo-ros-pkgs \
+    ros-humble-gazebo-ros ros-humble-gazebo-ros-pkgs ros-dev-tools \
     python3-colcon-common-extensions python3-pip \
-    ros-humble-moveit ros-humble-moveit-common \
+    ros-humble-moveit ros-humble-moveit-common  \
+    ros-humble-ros2-control ros-humble-controller-manager ros-humble-control-toolbox \
+    ros-humble-joint-state-broadcaster ros-humble-joint-trajectory-controller \
     ros-humble-moveit-ros-planning ros-humble-moveit-ros-move-group \
+    ros-humble-rqt-tf-tree \
     libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
     libxcb-keysyms1 libxcb-render-util0 libxrender1 x11-apps
 
