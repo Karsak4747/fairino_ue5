@@ -23,10 +23,10 @@ RUN apt-get update && apt-get install -y \
     ros-humble-gazebo-ros ros-humble-gazebo-ros-pkgs ros-dev-tools \
     python3-colcon-common-extensions python3-pip \
     ros-humble-moveit ros-humble-moveit-common  \
-    ros-humble-ros2-control ros-humble-controller-manager ros-humble-control-toolbox \
+    ros-humble-ros2-control ros-humble-ros2-controllers ros-humble-controller-manager ros-humble-control-toolbox \
     ros-humble-joint-state-broadcaster ros-humble-joint-trajectory-controller \
     ros-humble-moveit-ros-planning ros-humble-moveit-ros-move-group \
-    ros-humble-rqt-tf-tree \
+    ros-humble-rqt-tf-tree ros-humble-moveit-ros-perception ros-humble-pluginlib ros-humble-xacro \
     libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
     libxcb-keysyms1 libxcb-render-util0 libxrender1 x11-apps
 

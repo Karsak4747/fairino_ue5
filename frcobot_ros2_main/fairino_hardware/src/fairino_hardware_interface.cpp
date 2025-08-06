@@ -129,12 +129,12 @@ hardware_interface::CallbackReturn FairinoHardwareInterface::on_activate(const r
         for(int j=0;j<6;j++){
             _jnt_position_command[j] = tmp_state.jt_cur_pos[j]/180.0*M_PI;
         }
-        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"),"初始指令位置: %f,%f,%f,%f,%f,%f",_jnt_position_command[0],\
+        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"),"Initial command position: %f,%f,%f,%f,%f,%f",_jnt_position_command[0],\
         _jnt_position_command[1],_jnt_position_command[2],_jnt_position_command[3],_jnt_position_command[4],_jnt_position_command[5]);    
-        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"), "机械臂硬件启动成功!");
+        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"), "The robotic arm hardware started successfully!");
         return hardware_interface::CallbackReturn::SUCCESS;
     }else{//checksum为0说明和校验失败
-        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"), "和校验信息不通过，硬件无法启动！请检查通讯内容");
+        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"), "And the verification information does not pass, the hardware cannot be started! Please check the communication content");
         return hardware_interface::CallbackReturn::ERROR;
     }
 }
@@ -186,7 +186,7 @@ hardware_interface::return_type FairinoHardwareInterface::write(const rclcpp::Ti
         }
         _ptr_robot->write(_jnt_torque_command);//注意单位转换
     }else{
-        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"), "指令发送错误:未识别当前所处控制模式");
+        RCLCPP_INFO(rclcpp::get_logger("FairinoHardwareInterface"), "Command sending error: The current control mode is not recognized");
         return hardware_interface::return_type::ERROR;
     }
  
@@ -197,4 +197,5 @@ hardware_interface::return_type FairinoHardwareInterface::write(const rclcpp::Ti
 }//end namesapce
 
 #include "pluginlib/class_list_macros.hpp"
+
 PLUGINLIB_EXPORT_CLASS(fairino_hardware::FairinoHardwareInterface, hardware_interface::SystemInterface)

@@ -1869,7 +1869,7 @@ robot_recv_thread::robot_recv_thread(const std::string node_name):rclcpp::Node(n
     using namespace std::chrono_literals;
     _controller_ip = CONTROLLER_IP;//控制器默认ip地址
     RCLCPP_INFO(rclcpp::get_logger("fairino_hardware"),"Start creating a status feedback TCP socket.");
-    // std::cout << "开始创建状态反馈TCP socket" << std::endl;
+    // std::cout << "Start creating status feedback socket TCP socket" << std::endl;
 
     //只保留8081端口的连接，8083连接传输的数据已经不用
     // _socketfd1 = socket(AF_INET,SOCK_STREAM,0);//状态获取端口只有TCP

@@ -26,12 +26,12 @@ public:
     friend class FairinoHardwareInterface;
 protected:
     std::string _controller_ip;
-    std::unique_ptr<std::thread> _control_thread;//输入位置或者扭矩信息
-    std::unique_ptr<XmlRpc::XmlRpcClient> _xml_client_ptr;//xmlrcp客户端
+    std::unique_ptr<std::thread> _control_thread;//Enter position or torque information
+    std::unique_ptr<XmlRpc::XmlRpcClient> _xml_client_ptr;//xmlrcp client
     int _port_xmlrpc = 20003;
     int _port_state = 20004;
     int _socket_state;
-    int _control_mode;//0-none,1-位置控制,2-扭矩控制
+    int _control_mode;//0-none, 1-Position control, 2-Torque control
 };
 
 }//end namespace

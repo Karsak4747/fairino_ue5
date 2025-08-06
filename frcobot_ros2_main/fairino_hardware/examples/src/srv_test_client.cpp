@@ -3,7 +3,7 @@
 srv_test_node::srv_test_node(const std::string node_name):Node(node_name){
     using namespace std::chrono_literals;
     static int count = 0;
-    _client_ptr = this->create_client<fairino_msgs::srv::RemoteCmdInterface>("FR_ROS_API_service");
+    _client_ptr = this->create_client<fairino_msgs::srv::RemoteCmdInterface>("fairino_remote_command_service");
     auto locktimer_callback = [&]()->void{
         static int counter = 0;
         auto req = std::make_unique<fairino_msgs::srv::RemoteCmdInterface::Request>();
@@ -24,10 +24,10 @@ srv_test_node::srv_test_node(const std::string node_name):Node(node_name){
     _watchdog = this->create_wall_timer(5s,watchdog_callback);//5s检查一次队列,如果有等待消息则清除
     if(!_client_ptr->wait_for_service(1s)){
         if(!rclcpp::ok()){
-            std::cout << "ROS通讯错误:ROS非正常运行" << std::endl;
+            std::cout << "ROS: Communication error: ROS is not running normally" << std::endl;
             _locktimer->cancel();
         }else{
-            std::cout << "ROS通讯等待超时:没有检测到service启动" << std::endl;
+            std::cout << "ROS: Communication waiting timeout: service startup is not detected" << std::endl;
                 _locktimer->cancel();
         }
     }
@@ -41,7 +41,7 @@ void srv_test_node::_get_response_callback(rclcpp::Client<fairino_msgs::srv::Rem
     auto request_response_pair = future.get();
     std::string req_str = request_response_pair.first->cmd_str;
     std::string res_str = request_response_pair.second->cmd_res;
-    std::cout << "命令" + req_str + "的回复信息为" + res_str << std::endl; 
+    std::cout << "Command: " + req_str + ". The reply message is: " + res_str << std::endl; 
 }
 
 int srv_test_node::write_command(const std::string str){  
