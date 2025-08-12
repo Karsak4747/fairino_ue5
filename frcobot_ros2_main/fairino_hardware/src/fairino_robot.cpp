@@ -1,4 +1,7 @@
 #include "fairino_hardware/fairino_robot.hpp"
+#include <sstream>
+#include <iomanip>
+
 
 namespace fairino_hardware{
 
@@ -79,92 +82,130 @@ int fairino_robot::initpositioncontrol(){
     }
 }
 
-FR_rt_state& fairino_robot::read(){
-//Call TCP communication, directly use the memcpy function to copy, no need to expand the data
-    static FR_rt_state state_data;
-    static std::queue<FR_rt_state> store_buff;//Used to store excess data in the buffer area, the length needs to be limited
-    static char temp_buff[RT_PACKAGE_SIZE] = {0};
-    static int future_recv = RT_PACKAGE_SIZE;
-    int datalen = RT_PACKAGE_SIZE;
-    uint16_t* head_ptr;
-    uint8_t* checksum_ptr;
-    uint16_t checksum = 0;
-    while(datalen > 0){
-        char recv_buff[future_recv] = {0};
-        datalen = recv(_socket_state,recv_buff,sizeof(recv_buff),0);//Get data from the cache area
-        head_ptr = (uint16_t*)(recv_buff);//Get the frame header
-        checksum_ptr = (uint8_t*)(recv_buff);//And check pointer
-        if(*head_ptr == 0x5A5A){//Detect header
-            if(datalen == RT_PACKAGE_SIZE){//Sometimes the data at the end of the buffer is not a complete frame, so incomplete information needs to be saved for the next frame of data splicing.
-                for(int i=0;i< datalen-2;i++){
-			        checksum += *checksum_ptr; 
-			        checksum_ptr++;           
-                }
-                if(checksum == *((uint16_t*)checksum_ptr)){//Perform and verify
-                    memcpy(&state_data,recv_buff,sizeof(recv_buff));
-                    if(store_buff.size() < 10){
-                        store_buff.emplace(state_data);//Put data in the queue
-                        //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Get complete data,size:%d",datalen);    
-                    	}else{//If there are more than 10 data in the queue，then delete the data at the head of the queue and then insert the data at the end of the queue
-                        	store_buff.pop();//Pop up the element of the team leader
-                        	store_buff.emplace(state_data);
-                    	}
-                    }else{//And the verification does not pass, error information is lost, and no information is added to the queue
-                        //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Expected datasize: %d",datalen);
-                        RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot:Status data and verification failed! Current data packet size:%d, and verify the calculation data:%d, and verify the read data:%d",datalen,checksum,*((uint16_t*)checksum_ptr));
-                        state_data.check_sum = 0;    
-                    }
-                    checksum = 0;
-            }else{//Situations where splicing is required, or the wrong data structure causes the length to be smaller than the expected value
-                //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Obtain incomplete header data,size:%d",datalen);
-                memset(temp_buff,0,sizeof(temp_buff));//Empty temporary storage variables
-                memcpy(temp_buff,recv_buff,sizeof(recv_buff));//Temporary storage of incomplete data
-                for(int i=0;i< datalen;i++){
-		            checksum += *checksum_ptr; 
-		            checksum_ptr++;           
-                }
-                future_recv = RT_PACKAGE_SIZE - datalen;
-            }
-        }else{
-            //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Not obtained head,size:%d",datalen);
-            if(datalen == -1){
-                int error_code = 0;
-                socklen_t len1 = sizeof(error_code);
-                getsockopt(_socket_state,SOL_SOCKET,SO_ERROR,&error_code,&len1);//Get error code
-                //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Abnormal status data!");    
-                //break;//There is no data anymore, exit the loop
-            }else{//Perform data stitching
-                 for(int i=0;i< datalen-2;i++){//Perform and verify calculations
-			        checksum += *checksum_ptr; 
-			        checksum_ptr++;           
-                 }
-                 if(checksum == *((uint16_t*)checksum_ptr)){//Perform and verify
-                    memcpy(&temp_buff[RT_PACKAGE_SIZE-future_recv],recv_buff,sizeof(recv_buff));
-                    memcpy(&state_data,temp_buff,sizeof(temp_buff));
-                    //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Get spliced data，size: %d",datalen);
-                    if(store_buff.size() < 10){
-                        store_buff.emplace(state_data);//Put data in the queue
-                    }else{//When the queue length is equal to 10, the element at the beginning of the team pops up, and the element is added at the end of the team.
-                        store_buff.pop();
-                        store_buff.emplace(state_data);
-                    }
-                }else{//和校验不通过
-                    RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: splicing status data and verification failed!");
-                    state_data.check_sum = 0;    
-                }
-                future_recv = RT_PACKAGE_SIZE;
-            }
-            checksum = 0;
-        }
-    }//end while
-    //The following is reading data from the queue
-    if(!store_buff.empty()){//If the queue is not empty, then read the data, otherwise skip this time callback
-        state_data = store_buff.front();
-        store_buff.pop();
-        //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Status data: %d,%d",state_data.frame_head,(int)state_data.frame_cnt);    
-    }
-    return state_data;
+// необходимые include (если ещё не добавлены в начале .cpp)
+#include <deque>
+#include <vector>
+#include <queue>
+#include <mutex>
+#include <cstring>
+#include <unistd.h>
+#include <errno.h>
+#include <algorithm>
+
+// Вспомогательная функция: суммирование байт mod 65536
+static uint16_t sum_bytes_mod16(const uint8_t* data, size_t len) {
+    uint32_t s = 0;
+    for (size_t i = 0; i < len; ++i) s += data[i];
+    return static_cast<uint16_t>(s & 0xFFFF);
 }
+
+FR_rt_state& fairino_robot::read() {
+    static FR_rt_state last_state{};
+    static std::deque<uint8_t> acc;
+    static std::queue<FR_rt_state> store_buff;
+    const size_t HEADER_MIN = 2 + 1 + 2; // frame_head(2) + frame_cnt(1) + data_len(2)
+    const size_t CHECKSUM_SZ = 2;
+
+    uint8_t tmp[2048];
+    ssize_t n = recv(_socket_state, tmp, sizeof(tmp), 0);
+
+    if (n == 0) {
+        std::lock_guard<std::mutex> lg(_reconnect_mutex);
+        _is_reconnect.store(true);
+        RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"), "Socket closed by peer (recv==0)");
+        return last_state;
+    }
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) return last_state;
+        std::lock_guard<std::mutex> lg(_reconnect_mutex);
+        _is_reconnect.store(true);
+        RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"), "recv() failed: %s (%d)", strerror(errno), errno);
+        return last_state;
+    }
+
+    // добавляем ровно n байт в аккумулятор
+    acc.insert(acc.end(), tmp, tmp + static_cast<size_t>(n));
+
+    // парсим циклом: ищем заголовок и работаем с переменной длиной
+    while (true) {
+        if (acc.size() < HEADER_MIN) break;
+
+        // найти заголовок 0x5A5A
+        size_t header_index = SIZE_MAX;
+        for (size_t i = 0; i + 1 < acc.size(); ++i) {
+            if (acc[i] == 0x5A && acc[i+1] == 0x5A) { header_index = i; break; }
+        }
+        if (header_index == SIZE_MAX) {
+            // нет заголовка — оставляем 1 байт (на случай частичного заголовка) и ждём
+            while (acc.size() > 1) acc.pop_front();
+            break;
+        }
+
+        // отбросим мусор до заголовка
+        if (header_index > 0) {
+            for (size_t k = 0; k < header_index; ++k) acc.pop_front();
+            if (acc.size() < HEADER_MIN) break;
+        }
+
+        if (acc.size() < HEADER_MIN) break;
+
+        // прочитать data_len (little-endian) — acc[3], acc[4]
+        uint16_t data_len = static_cast<uint16_t>(acc[3]) | (static_cast<uint16_t>(acc[4]) << 8);
+
+        // полный размер кадра = header_min + data_len + checksum_size
+        size_t frame_len = HEADER_MIN + static_cast<size_t>(data_len) + CHECKSUM_SZ; // = 7 + data_len
+
+        if (acc.size() < frame_len) break; // ждем полный кадр
+
+        // скопируем кадр для удобной работы
+        std::vector<uint8_t> packet(frame_len);
+        for (size_t i = 0; i < frame_len; ++i) packet[i] = acc[i];
+
+        // вычислим контрольную сумму по всем байтам до поля check_sum (т.е. packet[0..frame_len-3], length = frame_len-2)
+        uint32_t sum = 0;
+        size_t payload_len_for_checksum = frame_len - CHECKSUM_SZ;
+        for (size_t i = 0; i < payload_len_for_checksum; ++i) sum += packet[i];
+        uint16_t calc = static_cast<uint16_t>(sum & 0xFFFF);
+
+        uint16_t pkt_le = static_cast<uint16_t>(packet[frame_len - 2]) |
+                          (static_cast<uint16_t>(packet[frame_len - 1]) << 8);
+        uint16_t pkt_be = static_cast<uint16_t>(packet[frame_len - 1]) |
+                          (static_cast<uint16_t>(packet[frame_len - 2]) << 8);
+
+        if (calc == pkt_le || calc == pkt_be) {
+            //валидный кадр
+            FR_rt_state st{};
+            size_t tocopy = std::min(sizeof(FR_rt_state), frame_len);
+            std::memcpy(&st, packet.data(), tocopy);
+            if (tocopy < sizeof(FR_rt_state)) {
+                RCLCPP_WARN(rclcpp::get_logger("FrHardwareInterface"),
+                            "Received frame shorter than FR_rt_state (%zu < %zu).", tocopy, sizeof(FR_rt_state));
+            }
+            if (store_buff.size() >= 10) store_buff.pop();
+            store_buff.emplace(st);
+            last_state = st;
+
+            // удалить обработанные байты
+            for (size_t i = 0; i < frame_len; ++i) acc.pop_front();
+        } else {
+            // неверная контрольная сумма — лог и ресинхронизация
+            RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
+                        "fairino_robot: verification failed (calc: %u, pkt_le: %u, pkt_be: %u, data_len: %u, acc.size=%zu)",
+                        (unsigned)calc, (unsigned)pkt_le, (unsigned)pkt_be, (unsigned)data_len, acc.size());
+            acc.pop_front(); // сдвигаем окно на 1 байт и ищем следующий заголовок
+        }
+    } // while
+
+    if (!store_buff.empty()) {
+        last_state = store_buff.front();
+        store_buff.pop();
+    }
+    return last_state;
+}
+
+
+
+
 
 
 void fairino_robot::write(double cmd[6]){
