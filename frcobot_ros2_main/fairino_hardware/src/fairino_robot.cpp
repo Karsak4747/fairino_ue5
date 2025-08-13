@@ -205,40 +205,89 @@ FR_rt_state& fairino_robot::read() {
 
 
 
+void fairino_robot::write(double cmd[6])
+{
+    if (_control_mode != POSITION_CONTROL_MODE) return;
 
+    XmlRpc::XmlRpcValue Args, result;
 
+    // Args[0] = joint positions (6)
+    Args[0].setSize(6);
+    for (int i = 0; i < 6; ++i) Args[0][i] = static_cast<double>(cmd[i]);
 
-void fairino_robot::write(double cmd[6]){
-//Write servo j instruction through xmlrpc library
-    if(_control_mode == POSITION_CONTROL_MODE){//Position control mode
-        XmlRpc::XmlRpcValue Args, result;
-        for(int i=0;i<6;i++){
-            Args[0][i] = cmd[i];//Assignment position instruction
+    // Args[1] = tool vector (4) — zeros
+    Args[1].setSize(4);
+    for (int i = 0; i < 4; ++i) Args[1][i] = 0.0;
+
+    // Args[2..6] = acc, vel, cmdT, filterT, gain
+    Args[2] = 0.0;      // acc
+    Args[3] = 0.0;      // vel
+    Args[4] = 0.008;    // cmdT (8 ms)
+    Args[5] = 0.0;      // filterT
+    Args[6] = 0.0;      // gain
+
+    // Args[7] = extra flag (int) to make total top-level args = 8
+    Args[7] = static_cast<int>(0);
+
+    try {
+        if (!_xml_client_ptr->execute("ServoJ", Args, result)) {
+            RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
+                        "fairino_robot: The instruction was not sent successfully");
+            return;
         }
-        for(int i=0;i<4;i++){
-            Args[1][i] = 0.;//Assignment position instruction
-        }
-        Args[2] = 0.;
-        Args[3] = 0.;
-        Args[4] = 0.008;//8ms
-        Args[5] = 0.;
-        Args[6] = 0.;
-        try{
-            //RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"发送servoJ: %f,%f,%f,%f,%f,%f",cmd[0],cmd[1],cmd[2],cmd[3],cmd[4],cmd[5]);    
-            if (_xml_client_ptr->execute("ServoJ", Args, result)){
-                if(int(result) != 0){
-                    RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: Received instruction feedback error code%d",int(result));    
+
+        // минимальный разбор результата: int | array[int] | struct{faultCode,faultString} | array[struct]
+        int rc = 0;
+        bool have_rc = false;
+
+        if (result.getType() == XmlRpc::XmlRpcValue::TypeInt ||
+            result.getType() == XmlRpc::XmlRpcValue::TypeDouble) {
+            rc = static_cast<int>(result);
+            have_rc = true;
+        } else if (result.getType() == XmlRpc::XmlRpcValue::TypeArray && result.size() > 0) {
+            XmlRpc::XmlRpcValue first = result[0];
+            if (first.getType() == XmlRpc::XmlRpcValue::TypeInt ||
+                first.getType() == XmlRpc::XmlRpcValue::TypeDouble) {
+                rc = static_cast<int>(first);
+                have_rc = true;
+            } else if (first.getType() == XmlRpc::XmlRpcValue::TypeStruct) {
+                if (first.hasMember("faultCode")) {
+                    rc = static_cast<int>(first["faultCode"]);
+                    have_rc = true;
                 }
-            }else{
-                RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: The instruction was not sent successfully");    
+                if (first.hasMember("faultString")) {
+                    std::string fs = static_cast<std::string>(first["faultString"]);
+                    RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
+                                "fairino_robot: ServoJ fault: %s", fs.c_str());
+                }
             }
-        }catch(XmlRpc::XmlRpcException e){
-            RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),"fairino_robot: There is an exception in the transmission of instructions!information:%s",e.getMessage().c_str());    
+        } else if (result.getType() == XmlRpc::XmlRpcValue::TypeStruct) {
+            if (result.hasMember("faultCode")) {
+                rc = static_cast<int>(result["faultCode"]);
+                have_rc = true;
+            }
+            if (result.hasMember("faultString")) {
+                std::string fs = static_cast<std::string>(result["faultString"]);
+                RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
+                            "fairino_robot: ServoJ fault: %s", fs.c_str());
+            }
         }
-    }else if(_control_mode == TORQUE_CONTROL_MODE){
 
+        if (have_rc && rc != 0) {
+            RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
+                        "fairino_robot: Received instruction feedback error code %d", rc);
+        }
+
+    } catch (const XmlRpc::XmlRpcException &e) {
+        RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
+                    "fairino_robot: ServoJ XmlRpcException: %s", e.getMessage().c_str());
+    } catch (const std::exception &e) {
+        RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
+                    "fairino_robot: ServoJ exception: %s", e.what());
     }
 }
+
+
 
 
 }//end namespace
