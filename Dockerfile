@@ -5,17 +5,18 @@ RUN rm -f /etc/apt/sources.list.d/ros2-latest.list \
           /usr/share/keyrings/ros2-latest-archive-keyring.gpg
 
 # 2) Ставим утилиты и импортируем новый ключ
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl gnupg lsb-release \
- && mkdir -p /etc/apt/keyrings \
- && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
-      | gpg --dearmor \
-      | tee /etc/apt/keyrings/ros-archive-keyring.gpg > /dev/null
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#       ca-certificates curl gnupg lsb-release \
+#  && mkdir -p /etc/apt/keyrings \
+#  && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+#       | gpg --dearmor \
+#       | tee /etc/apt/keyrings/ros-archive-keyring.gpg > /dev/null
 
-# 3) Добавляем единственный чистый репозиторий
-RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/ros-archive-keyring.gpg] \
-      http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" \
-      > /etc/apt/sources.list.d/ros2.list
+      
+# # 3) Добавляем единственный чистый репозиторий
+# RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/ros-archive-keyring.gpg] \
+#       http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" \
+#       > /etc/apt/sources.list.d/ros2.list
 
 # Теперь можно обновлять и устанавливать нужные пакеты
 RUN apt-get update && apt-get install -y \
