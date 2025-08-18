@@ -27,11 +27,12 @@ RUN apt-get update && apt-get install -y \
     ros-humble-joint-state-broadcaster ros-humble-joint-trajectory-controller \
     ros-humble-moveit-ros-planning ros-humble-moveit-ros-move-group \
     ros-humble-rqt-tf-tree ros-humble-moveit-ros-perception ros-humble-pluginlib ros-humble-xacro \
-    libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
+    libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libompl-dev ompl-demos \
     libxcb-keysyms1 libxcb-render-util0 libxrender1 x11-apps
 
 # Копируем основной пакет
 COPY frcobot_ros2_main /root/ros2_ws/src/frcobot_ros2_main
+COPY move/warehouse_ros_mongo.yaml /root/.ros/warehouse_ros_mongo.yaml
 
 # Клонируем warehouse_ros_mongo с исправлением
 WORKDIR /root/ros2_ws/src

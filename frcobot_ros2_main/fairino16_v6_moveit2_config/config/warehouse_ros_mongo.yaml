@@ -1,0 +1,18 @@
+warehouse_plugin: warehouse_ros_mongo::MongoDatabaseConnection
+
+# Адрес и порт MongoDB
+warehouse_host: 192.168.58.254
+warehouse_port: 27017
+
+# Данные для авторизации (как в docker-compose)
+warehouse_user: root
+warehouse_password: infochem
+
+# Имя базы данных для MoveIt (можно любое, но не admin)
+warehouse_db: warehouse
+
+# Таймаут подключения (в секундах)
+timeout: 5.0
+
+# Включить логирование соединений
+verbose: true

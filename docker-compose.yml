@@ -12,7 +12,7 @@ services:
       - /dev/shm:/dev/shm # Для связи с UE5
     devices:
       - /dev/dri:/dev/dri
-    command: bash -c "source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main && source /usr/share/gazebo/setup.sh && xeyes" #ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config ${LAUNCH_MODE}.launch.py && gzserver --verbose -s --disable-audio"
+    command: bash -c "source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/root/frcobot_ros2_main && source /usr/share/gazebo/setup.sh && ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config demo.launch.py" #ros2 launch fairino${FAIRINO_VERSION}_v6_moveit2_config ${LAUNCH_MODE}.launch.py && gzserver --verbose -s --disable-audio"
     networks:
       fairino-net:
         ipv4_address: 192.168.58.10
@@ -30,6 +30,33 @@ services:
       fairino-net:
         ipv4_address: 192.168.58.2
     restart: unless-stopped
+
+  mongodb:
+    image: mongo:4.4.29
+    container_name: mongodb
+    ports: 
+    - 27017:27017
+    - 8081:8081
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: infochem
+    networks:
+      fairino-net:
+        ipv4_address: 192.168.58.254
+
+
+  modbus_api:
+    container_name: modbus_api
+    build:
+      context: ./modbus_rest_gateway
+      dockerfile: Dockerfile
+    env_file: ./modbus_rest_gateway/.env
+    ports:
+      - "8000:8000"
+    networks:
+      fairino-net:
+        ipv4_address: 192.168.58.20
 
 networks:
   fairino-net:
