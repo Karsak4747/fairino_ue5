@@ -11,12 +11,12 @@ import os
 
 def generate_launch_description():
     # Locate package
-    pkg_share = FindPackageShare('fairino3_v6_moveit2_config')
+    pkg_share = FindPackageShare('fairino5_v6_moveit2_config')
 
     # File paths
-    urdf_file = PathJoinSubstitution([pkg_share, 'config', 'fairino3_v6_robot.urdf.xacro'])
+    urdf_file = PathJoinSubstitution([pkg_share, 'config', 'fairino5_v6_robot.urdf.xacro'])
     ros2_controllers = PathJoinSubstitution([pkg_share, 'config', 'ros2_controllers.yaml'])
-    srdf_file = PathJoinSubstitution([pkg_share, 'config', 'fairino3_v6_robot.srdf'])
+    srdf_file = PathJoinSubstitution([pkg_share, 'config', 'fairino5_v6_robot.srdf'])
     kinematics_yaml = PathJoinSubstitution([pkg_share, 'config', 'kinematics.yaml'])
     ompl_yaml = PathJoinSubstitution([pkg_share, 'config', 'ompl_planning.yaml'])
     rviz_config = PathJoinSubstitution([pkg_share, 'config', 'moveit.rviz'])
@@ -58,15 +58,15 @@ def generate_launch_description():
         output='screen'
     )
 
-    spawn_fairino3_controller = Node(
+    spawn_fairino5_controller = Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['fairino3_controller', '--controller-manager', '/controller_manager'],
+        arguments=['fairino5_controller', '--controller-manager', '/controller_manager'],
         output='screen'
     )
 
     delayed_spawn_jsb = TimerAction(period=2.0, actions=[spawn_joint_state_broadcaster])
-    delayed_spawn_arm = TimerAction(period=4.0, actions=[spawn_fairino3_controller])
+    delayed_spawn_arm = TimerAction(period=4.0, actions=[spawn_fairino5_controller])
 
     # Start Move Group
     move_group_node = Node(
@@ -96,7 +96,7 @@ def generate_launch_description():
     # --- Marker publisher (STL) ---
     # путь до скрипта в твоём пакете
     stl_script = os.path.join(
-        get_package_share_directory('fairino3_v6_moveit2_config'),
+        get_package_share_directory('fairino5_v6_moveit2_config'),
         'config',
         'stl_marker_pub.py'
     )

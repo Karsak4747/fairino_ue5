@@ -1,0 +1,5 @@
+{
+	"log_count":	"30",
+	"language":	"en",
+	"lifespan":	"86400"
+}

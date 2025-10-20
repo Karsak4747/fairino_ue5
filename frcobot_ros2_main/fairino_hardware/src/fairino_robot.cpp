@@ -260,6 +260,8 @@ void fairino_robot::write(double cmd[6])
                     RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
                                 "fairino_robot: ServoJ fault: %s", fs.c_str());
                 }
+
+
             }
         } else if (result.getType() == XmlRpc::XmlRpcValue::TypeStruct) {
             if (result.hasMember("faultCode")) {
@@ -272,6 +274,7 @@ void fairino_robot::write(double cmd[6])
                             "fairino_robot: ServoJ fault: %s", fs.c_str());
             }
         }
+
 
         if (have_rc && rc != 0) {
             RCLCPP_INFO(rclcpp::get_logger("FrHardwareInterface"),
@@ -286,8 +289,4 @@ void fairino_robot::write(double cmd[6])
                     "fairino_robot: ServoJ exception: %s", e.what());
     }
 }
-
-
-
-
-}//end namespace
+}

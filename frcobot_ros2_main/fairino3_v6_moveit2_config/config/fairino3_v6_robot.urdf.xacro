@@ -8,7 +8,16 @@
     <!-- Import control_xacro -->
     <xacro:include filename="fairino3_v6_robot.ros2_control.xacro" />
 
+    <!-- include статического гриппера -->
+    <xacro:include filename="$(find fairino3_v6_moveit2_config)/config/z-efg-100.xacro"/>
 
+    <!-- Вызов макроса: прикрепляем к wrist3_link -->
+    <!-- mesh: package URI, scale: 0.001 если STL в мм, иначе 1 -->
+    <xacro:static_gripper
+    parent="wrist3_link"
+    prefix="gr_"
+    mesh="package://fairino_description/meshes/z-efg-100.stl"
+    scale="0.001"/>
     <xacro:fairino3_v6_robot_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
 
 </robot>

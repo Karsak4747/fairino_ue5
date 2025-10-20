@@ -49,9 +49,9 @@ services:
   modbus_api:
     container_name: modbus_api
     build:
-      context: ./modbus_rest_gateway
+      context: ./antiterror_stand_robot_gateway_app
       dockerfile: Dockerfile
-    env_file: ./modbus_rest_gateway/.env
+    env_file: ./antiterror_stand_robot_gateway_app/.env
     ports:
       - "8000:8000"
     networks:

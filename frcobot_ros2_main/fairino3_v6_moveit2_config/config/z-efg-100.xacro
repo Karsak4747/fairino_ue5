@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="static_gripper">
+
+  <!-- Макрос для простого фиксированного гриппера -->
+  <!-- parent: имя link робота (wrist3_link) -->
+  <!-- prefix: префикс для имён link/joint -->
+  <!-- mesh: относительный путь к мешу внутри пакета -->
+  <!-- scale: масштаб (если STL в мм => 0.001) -->
+  <xacro:macro name="static_gripper" params="parent prefix mesh scale">
+    <link name="${prefix}gripper_base_link">
+      <visual>
+        <origin xyz="0 0 0.095" rpy="0 0 3.14"/>
+        <geometry>
+          <mesh filename="package://fairino_description/meshes/z-efg-100.stl" scale="${scale} ${scale} ${scale}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0.095" rpy="0 0 3.14"/>
+        <geometry>
+          <mesh filename="package://fairino_description/meshes/z-efg-100.stl" scale="${scale} ${scale} ${scale}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.1"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+      </inertial>
+    </link>
+
+    <!-- фиксируем базу гриппера к parent -->
+    <joint name="${prefix}gripper_fixed_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child  link="${prefix}gripper_base_link"/>
+      <!-- поправь origin xyz/rpy если нужно сдвинуть/поворот -->
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+</robot>
